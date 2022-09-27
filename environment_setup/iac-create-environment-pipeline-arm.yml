@@ -18,7 +18,7 @@ pool:
   vmImage: "ubuntu-latest"
 
 variables:
-  - group: devopsforai-aml-vg
+  - group: yolov5-aml-vg
   - name: WORKSPACE_SKU # https://docs.microsoft.com/en-us/azure/machine-learning/overview-what-is-azure-ml#sku
     value: basic
 
