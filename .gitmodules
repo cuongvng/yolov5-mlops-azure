@@ -1,3 +1,3 @@
-[submodule "model_repo"]
-	path = model_repo
+[submodule "yolov5_repo"]
+	path = yolov5_repo
 	url = https://github.com/cuongvng/yolov5
