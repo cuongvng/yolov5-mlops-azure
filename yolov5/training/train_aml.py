@@ -24,28 +24,15 @@ ARISING IN ANY WAY OUT OF THE USE OF THE SOFTWARE CODE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 from azureml.core.run import Run
-from azureml.core import Dataset, Datastore, Workspace
+from azureml.core import Dataset
 import os
 import argparse
-import joblib
+import yaml 
+import pandas as pd
 import json
 from train import split_data, train_model, get_model_metrics
 
-
-def register_dataset(
-    aml_workspace: Workspace,
-    dataset_name: str,
-    datastore_name: str,
-    file_path: str
-) -> Dataset:
-    datastore = Datastore.get(aml_workspace, datastore_name)
-    dataset = Dataset.Tabular.from_delimited_files(path=(datastore, file_path))
-    dataset = dataset.register(workspace=aml_workspace,
-                               name=dataset_name,
-                               create_new_version=True)
-
-    return dataset
-
+YOLOV5_PATH = "../../yolov5_repo"
 
 def main():
     print("Running train_aml.py")
@@ -55,7 +42,7 @@ def main():
         "--model_name",
         type=str,
         help="Name of the Model",
-        default="diabetes_model.pkl",
+        default="yolov5_model.pt",
     )
 
     parser.add_argument(
@@ -68,13 +55,6 @@ def main():
         "--dataset_version",
         type=str,
         help=("dataset version")
-    )
-
-    parser.add_argument(
-        "--data_file_path",
-        type=str,
-        help=("data file path, if specified,\
-               a new version of the dataset will be registered")
     )
 
     parser.add_argument(
@@ -96,14 +76,12 @@ def main():
     print("Argument [model_name]: %s" % args.model_name)
     print("Argument [step_output]: %s" % args.step_output)
     print("Argument [dataset_version]: %s" % args.dataset_version)
-    print("Argument [data_file_path]: %s" % args.data_file_path)
     print("Argument [caller_run_id]: %s" % args.caller_run_id)
     print("Argument [dataset_name]: %s" % args.dataset_name)
 
     model_name = args.model_name
     step_output_path = args.step_output
     dataset_version = args.dataset_version
-    data_file_path = args.data_file_path
     dataset_name = args.dataset_name
 
     run = Run.get_context()
@@ -127,13 +105,7 @@ def main():
 
     # Get the dataset
     if (dataset_name):
-        if (data_file_path == 'none'):
-            dataset = Dataset.get_by_name(run.experiment.workspace, dataset_name, dataset_version)  # NOQA: E402, E501
-        else:
-            dataset = register_dataset(run.experiment.workspace,
-                                       dataset_name,
-                                       os.environ.get("DATASTORE_NAME"),
-                                       data_file_path)
+        dataset = Dataset.get_by_name(run.experiment.workspace, dataset_name, dataset_version)  # NOQA: E402, E501
     else:
         e = ("No dataset provided")
         print(e)
@@ -143,28 +115,40 @@ def main():
     run.input_datasets['training_data'] = dataset
     run.parent.tag("dataset_id", value=dataset.id)
 
-    # Split the data into test/train
-    df = dataset.to_pandas_dataframe()
-    data = split_data(df)
+    # Download the dataset to the local machine, destination specified in a config file.
+    data_description_file = os.path.join(YOLOV5_PATH, 'data/coco128.yaml')
+    with open(data_description_file, 'r') as f:
+        cfg = yaml.load(f)
+        dest = cfg["path"]
+    dataset.download(target_path=dest)
 
-    # Train the model
-    model = train_model(data, train_args)
+    # Call training command from the original yolov5 repo, e.g.
+    # $ python train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt
 
-    # Evaluate and log the metrics returned from the train function
-    metrics = get_model_metrics(model, data)
-    for (k, v) in metrics.items():
-        run.log(k, v)
-        run.parent.log(k, v)
+    import subprocess
+    subprocess.run(["python", "train.py", 
+                "--img", f"{train_args['img_size']}",
+                "--batch", f"{train_args['batch_size']}",
+                "--epochs", f"{train_args['n_epochs']}",
+                "--data", f"{data_description_file}",
+                "--weights", f"{train_args['weights']}"])
 
-    # Pass model file to next step
-    os.makedirs(step_output_path, exist_ok=True)
-    model_output_path = os.path.join(step_output_path, model_name)
-    joblib.dump(value=model, filename=model_output_path)
+    # Load saved model and metrics 
+    training_res_path = os.join(YOLOV5_PATH, "runs/training/exp/")
+    model_path = os.join(training_res_path, "weights/best.pt")
+    metric_path = os.join(training_res_path, "results.csv")
 
-    # Also upload model file to run outputs for history
-    os.makedirs('outputs', exist_ok=True)
+    # Move the model to a target dir, and delete the `runs/training/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
     output_path = os.path.join('outputs', model_name)
-    joblib.dump(value=model, filename=output_path)
+    subprocess.run(["mv", model_path, output_path])
+    subprocess.run(["rm", "-rf", training_res_path])
+
+    # Log the metrics returned from the train function
+    metrics = pd.read_csv(metric_path)
+    name = "mAP_0.5:0.95"
+    mAP_50_95 = metrics.iloc[-1]["metrics/"+name]
+    run.log(name, mAP_50_95)
+    run.parent.log(name, mAP_50_95)
 
     run.tag("run_type", value="train")
     print(f"tags now present for run: {run.tags}")
