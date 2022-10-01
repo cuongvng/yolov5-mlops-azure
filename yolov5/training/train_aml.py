@@ -138,9 +138,15 @@ def main():
     model_path = os.join(training_res_path, "weights/best.pt")
     metric_path = os.join(training_res_path, "results.csv")
 
-    # Move the model to a target dir, and delete the `runs/training/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
+    # Copy the model to a new dir `step_output_path`, and delete the `runs/training/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
+
+    os.makedirs(step_output_path, exist_ok=True)
+    model_output_path = os.path.join(step_output_path, model_name)
+    subprocess.run(["cp", model_path, model_output_path])
+
+    # Also copy it to the special `outputs` dir in the Azure VM, all content in this directory is automatically uploaded to the ML workspace.
     output_path = os.path.join('outputs', model_name)
-    subprocess.run(["mv", model_path, output_path])
+    subprocess.run(["cp", model_path, output_path])
     subprocess.run(["rm", "-rf", training_res_path])
 
     # Log the metrics returned from the train function
