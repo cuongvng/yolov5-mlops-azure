@@ -31,7 +31,7 @@ import yaml
 import pandas as pd
 import json
 
-YOLOV5_PATH = "../../yolov5_repo"
+YOLOV5_PATH = "../yolov5_repo"
 
 def main():
     print("Running train_aml.py")
