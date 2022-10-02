@@ -30,7 +30,6 @@ import argparse
 import yaml 
 import pandas as pd
 import json
-from train import split_data, train_model, get_model_metrics
 
 YOLOV5_PATH = "../../yolov5_repo"
 
