@@ -88,7 +88,7 @@ stages:
         PipelineParameters: '"ParameterAssignments": {"model_name": "$(MODEL_NAME)"}, "tags": {"BuildId": "$(Build.BuildId)", "BuildUri": "$(BUILD_URI)"}, "StepTags": {"BuildId": "$(Build.BuildId)", "BuildUri": "$(BUILD_URI)"}'
   - job: "Training_Run_Report"
     dependsOn: "Run_ML_Pipeline"
-    condition: always()
+    # condition: always()
     displayName: "Publish artifact if new model was registered"
     container: mlops
     timeoutInMinutes: 0
