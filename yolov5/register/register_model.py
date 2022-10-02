@@ -28,10 +28,9 @@ import os
 import sys
 import argparse
 import traceback
-import joblib
+import torch
 from azureml.core import Run, Experiment, Workspace, Dataset
 from azureml.core.model import Model as AMLModel
-
 
 def main():
 
@@ -70,7 +69,7 @@ def main():
         "--model_name",
         type=str,
         help="Name of the Model",
-        default="yolov5_model.pkl",
+        default="yolov5_model.pt",
     )
 
     parser.add_argument(
@@ -109,8 +108,15 @@ def main():
     # load the model
     print("Loading model from " + model_path)
     model_file = os.path.join(model_path, model_name)
-    model = joblib.load(model_file)
+    model = torch.load(model_file)
+    # loaded = torch.load(model_file)
+    # model = DetectionModel(loaded["model"].yaml)
+    # state_dict = loaded["model"].float().state_dict()
+    # state_dict = intersect_dicts(state_dict, model.state_dict())
+    # model.load_state_dict(state_dict)    
+
     parent_tags = run.parent.get_tags()
+
     try:
         build_id = parent_tags["BuildId"]
     except KeyError:
