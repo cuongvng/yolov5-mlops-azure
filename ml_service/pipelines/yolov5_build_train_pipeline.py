@@ -49,9 +49,9 @@ def main():
     dataset_version_param = PipelineParameter(
         name="dataset_version", default_value=e.dataset_version
     )
-    data_file_path_param = PipelineParameter(
-        name="data_file_path", default_value="none"
-    )
+    # data_file_path_param = PipelineParameter(
+    #     name="data_file_path", default_value="none"
+    # )
     caller_run_id_param = PipelineParameter(name="caller_run_id", default_value="none")  # NOQA: E501
 
     # Get dataset name
@@ -59,42 +59,7 @@ def main():
 
     # Check to see if dataset exists
     if dataset_name not in aml_workspace.datasets:
-        # This call creates an example CSV from sklearn sample data. If you
-        # have already bootstrapped your project, you can comment this line
-        # out and use your own CSV.
-        create_sample_data_csv()
-
-        # Use a CSV to read in the data set.
-        file_name = "yolov5.csv"
-
-        if not os.path.exists(file_name):
-            raise Exception(
-                'Could not find CSV dataset at "%s". If you have bootstrapped your project, you will need to provide a CSV.'  # NOQA: E501
-                % file_name
-            )  # NOQA: E501
-
-        # Upload file to default datastore in workspace
-        datatstore = Datastore.get(aml_workspace, datastore_name)
-        target_path = "training-data/"
-        datatstore.upload_files(
-            files=[file_name],
-            target_path=target_path,
-            overwrite=True,
-            show_progress=False,
-        )
-
-        # Register dataset
-        path_on_datastore = os.path.join(target_path, file_name)
-        dataset = Dataset.Tabular.from_delimited_files(
-            path=(datatstore, path_on_datastore)
-        )
-        dataset = dataset.register(
-            workspace=aml_workspace,
-            name=dataset_name,
-            description="yolov5 training data",
-            tags={"format": "CSV"},
-            create_new_version=True,
-        )
+        raise FileNotFoundError(f"{dataset_name} not found in the workspace.")
 
     # Create a PipelineData to pass data between steps
     pipeline_data = PipelineData(
@@ -114,8 +79,8 @@ def main():
             pipeline_data,
             "--dataset_version",
             dataset_version_param,
-            "--data_file_path",
-            data_file_path_param,
+            # "--data_file_path",
+            # data_file_path_param,
             "--caller_run_id",
             caller_run_id_param,
             "--dataset_name",
@@ -126,21 +91,21 @@ def main():
     )
     print("Step Train created")
 
-    evaluate_step = PythonScriptStep(
-        name="Evaluate Model ",
-        script_name=e.evaluate_script_path,
-        compute_target=aml_compute,
-        source_directory=e.sources_directory_train,
-        arguments=[
-            "--model_name",
-            model_name_param,
-            "--allow_run_cancel",
-            e.allow_run_cancel,
-        ],
-        runconfig=run_config,
-        allow_reuse=False,
-    )
-    print("Step Evaluate created")
+    # evaluate_step = PythonScriptStep(
+    #     name="Evaluate Model ",
+    #     script_name=e.evaluate_script_path,
+    #     compute_target=aml_compute,
+    #     source_directory=e.sources_directory_train,
+    #     arguments=[
+    #         "--model_name",
+    #         model_name_param,
+    #         "--allow_run_cancel",
+    #         e.allow_run_cancel,
+    #     ],
+    #     runconfig=run_config,
+    #     allow_reuse=False,
+    # )
+    # print("Step Evaluate created")
 
     register_step = PythonScriptStep(
         name="Register Model ",
@@ -153,16 +118,18 @@ def main():
         allow_reuse=False,
     )
     print("Step Register created")
-    # Check run_evaluation flag to include or exclude evaluation step.
-    if (e.run_evaluation).lower() == "true":
-        print("Include evaluation step before register step.")
-        evaluate_step.run_after(train_step)
-        register_step.run_after(evaluate_step)
-        steps = [train_step, evaluate_step, register_step]
-    else:
-        print("Exclude evaluation step and directly run register step.")
-        register_step.run_after(train_step)
-        steps = [train_step, register_step]
+
+    # # Check run_evaluation flag to include or exclude evaluation step.
+    # if (e.run_evaluation).lower() == "true":
+    #     print("Include evaluation step before register step.")
+    #     evaluate_step.run_after(train_step)
+    #     register_step.run_after(evaluate_step)
+    #     steps = [train_step, evaluate_step, register_step]
+    # else:
+
+    print("Exclude evaluation step and directly run register step.")
+    register_step.run_after(train_step)
+    steps = [train_step, register_step]
 
     train_pipeline = Pipeline(workspace=aml_workspace, steps=steps)
     train_pipeline._set_experiment_name

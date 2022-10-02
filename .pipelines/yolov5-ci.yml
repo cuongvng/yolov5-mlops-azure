@@ -13,13 +13,12 @@ trigger:
   paths:
     include:
     - yolov5/
+    - yolov5_repo/
     - ml_service/pipelines/yolov5_build_train_pipeline.py
-    - ml_service/pipelines/yolov5_build_train_pipeline_with_r.py
-    - ml_service/pipelines/yolov5_build_train_pipeline_with_r_on_dbricks.py
 
 variables:
 - template: yolov5-variables-template.yml
-- group: devopsforai-aml-vg
+- group: yolov5-aml-vg
 
 pool:
   vmImage: ubuntu-latest

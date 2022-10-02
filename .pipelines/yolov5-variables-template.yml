@@ -20,9 +20,9 @@ variables:
 
   # Azure ML Variables
   - name: EXPERIMENT_NAME
-    value: mlopspython
+    value: yolov5-azure
   - name: DATASET_NAME
-    value: yolov5_ds
+    value: yolov5_datastore
   # Uncomment DATASTORE_NAME if you have configured non default datastore to point to your data
   # - name: DATASTORE_NAME
   #   value: datablobstore
@@ -31,7 +31,7 @@ variables:
   - name: TRAINING_PIPELINE_NAME
     value: "yolov5-Training-Pipeline"
   - name: MODEL_NAME
-    value: yolov5_model.pkl
+    value: yolov5_model.pt
 
   # AML Compute Cluster Config
   - name: AML_ENV_NAME
@@ -93,13 +93,13 @@ variables:
     value: 4
   - name: AML_CLUSTER_PRIORITY_SCORING
     value: lowpriority
-  # The path to the batch scoring script relative to SOURCES_DIR_TRAIN
-  - name: BATCHSCORE_SCRIPT_PATH
-    value: scoring/parallel_batchscore.py
-  - name: BATCHSCORE_COPY_SCRIPT_PATH
-    value: scoring/parallel_batchscore_copyoutput.py
-  # Flag to allow rebuilding the AML Environment after it was built for the first time. 
-  # This enables dependency updates from the conda dependencies yaml for scoring activities.
+  # # The path to the batch scoring script relative to SOURCES_DIR_TRAIN
+  # - name: BATCHSCORE_SCRIPT_PATH
+  #   value: scoring/parallel_batchscore.py
+  # - name: BATCHSCORE_COPY_SCRIPT_PATH
+  #   value: scoring/parallel_batchscore_copyoutput.py
+  # # Flag to allow rebuilding the AML Environment after it was built for the first time. 
+  # # This enables dependency updates from the conda dependencies yaml for scoring activities.
   - name: AML_REBUILD_ENVIRONMENT_SCORING
     value: "true"
 
@@ -108,22 +108,22 @@ variables:
   # in the Azure Pipelines library for this project. Please refer to repo docs for 
   # more details
 
-  # Blob container where the input data for scoring can be found
-  - name: SCORING_DATASTORE_INPUT_CONTAINER
-    value: "input"
-  # Blobname for the input data - include any applicable path in the string 
-  - name: SCORING_DATASTORE_INPUT_FILENAME
-    value: "yolov5_scoring_input.csv"
-  # Blob container where the output data for scoring can be found
-  - name: SCORING_DATASTORE_OUTPUT_CONTAINER
-    value: "output"
-  # Blobname for the output data - include any applicable path in the string 
-  - name: SCORING_DATASTORE_OUTPUT_FILENAME
-    value: "yolov5_scoring_output.csv"
-  # Dataset name for input data for scoring
-  - name: SCORING_DATASET_NAME
-    value: "yolov5_scoring_ds"
-  # Scoring pipeline name
-  - name: SCORING_PIPELINE_NAME
-    value: "yolov5-scoring-pipeline"
+  # # Blob container where the input data for scoring can be found
+  # - name: SCORING_DATASTORE_INPUT_CONTAINER
+  #   value: "input"
+  # # Blobname for the input data - include any applicable path in the string 
+  # - name: SCORING_DATASTORE_INPUT_FILENAME
+  #   value: "yolov5_scoring_input.csv"
+  # # Blob container where the output data for scoring can be found
+  # - name: SCORING_DATASTORE_OUTPUT_CONTAINER
+  #   value: "output"
+  # # Blobname for the output data - include any applicable path in the string 
+  # - name: SCORING_DATASTORE_OUTPUT_FILENAME
+  #   value: "yolov5_scoring_output.csv"
+  # # Dataset name for input data for scoring
+  # - name: SCORING_DATASET_NAME
+  #   value: "yolov5_scoring_ds"
+  # # Scoring pipeline name
+  # - name: SCORING_PIPELINE_NAME
+  #   value: "yolov5-scoring-pipeline"
     
