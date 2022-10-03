@@ -131,24 +131,24 @@ def main():
 	dataset.download(target_path=dest)
 
 	# Call training command from the original yolov5 repo, e.g.
-	# $ python ./yolov5_repo/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --workers 0
+	# $ python ./yolov5_repo/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --workers 0 --project "./runs/train"
 
+	training_res_path = os.path.join(YOLOV5_PATH, "runs/train")
 	subprocess.run(["python", os.path.join(YOLOV5_PATH, "train.py"), 
 				"--img", f"{train_args['img_size']}",
 				"--batch", f"{train_args['batch_size']}",
 				"--epochs", f"{train_args['n_epochs']}",
 				"--data", f"{data_description_file}",
 				"--weights", f"{train_args['weights']}",
-				"--workers", "0"])
+				"--workers", "0",
+				"--project", training_res_path])
 	
 	print("Save model and metrics")
 	# Load saved model and metrics 
-	training_res_path = os.path.join(YOLOV5_PATH, "runs/train/exp/")
-	model_path = os.path.join(training_res_path, "weights/best.pt")
-	metric_path = os.path.join(training_res_path, "results.csv")
+	model_path = os.path.join(training_res_path, "exp/weights/best.pt")
+	metric_path = os.path.join(training_res_path, "exp/results.csv")
 
 	# Copy the model to a new dir `step_output_path`, and delete the `runs/train/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
-
 	os.makedirs(step_output_path, exist_ok=True)
 	model_output_path = os.path.join(step_output_path, model_name)
 	subprocess.run(["cp", model_path, model_output_path])
@@ -156,7 +156,7 @@ def main():
 	# Also copy it to the special `outputs` dir in the Azure VM, all content in this directory is automatically uploaded to the ML workspace.
 	output_path = os.path.join('outputs', model_name)
 	subprocess.run(["cp", model_path, output_path])
-	subprocess.run(["rm", "-rf", training_res_path])
+	# subprocess.run(["rm", "-rf", training_res_path])
 
 	# Log the metrics returned from the train function
 	metrics = pd.read_csv(metric_path)
