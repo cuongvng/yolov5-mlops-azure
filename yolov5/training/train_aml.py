@@ -23,19 +23,19 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THE SOFTWARE CODE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
-# from azureml.core.run import Run
-# from azureml.core import Dataset
+from azureml.core.run import Run
+from azureml.core import Dataset
 import os
-# import argparse
-# import yaml 
-# import pandas as pd
-# import json
+import argparse
+import yaml 
+import pandas as pd
+import json
 
 import subprocess
 print("print working dir:")
 subprocess.run(["pwd"])
 
-YOLOV5_PATH = "../yolov5_repo"
+YOLOV5_PATH = "./yolov5_repo"
 
 def main():
 	print("Running train_aml.py")
@@ -118,7 +118,6 @@ def main():
 	run.input_datasets['training_data'] = dataset
 	run.parent.tag("dataset_id", value=dataset.id)
 
-	# Download the dataset to the local machine, destination specified in a config file.
 	data_description_file = os.path.join(YOLOV5_PATH, 'data/coco128.yaml')
 	with open(data_description_file, 'r') as f:
 		cfg = yaml.load(f)
@@ -126,10 +125,10 @@ def main():
 	dataset.download(target_path=dest)
 
 	# Call training command from the original yolov5 repo, e.g.
-	# $ python train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt
+	# $ python ./yolov5_repo/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt
 
 	import subprocess
-	subprocess.run(["python", "train.py", 
+	subprocess.run(["python", os.path.join(YOLOV5_PATH, "train.py"), 
 				"--img", f"{train_args['img_size']}",
 				"--batch", f"{train_args['batch_size']}",
 				"--epochs", f"{train_args['n_epochs']}",
