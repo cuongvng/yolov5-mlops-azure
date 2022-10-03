@@ -131,14 +131,15 @@ def main():
 	dataset.download(target_path=dest)
 
 	# Call training command from the original yolov5 repo, e.g.
-	# $ python ./yolov5_repo/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt
+	# $ python ./yolov5_repo/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --workers 0
 
 	subprocess.run(["python", os.path.join(YOLOV5_PATH, "train.py"), 
 				"--img", f"{train_args['img_size']}",
 				"--batch", f"{train_args['batch_size']}",
 				"--epochs", f"{train_args['n_epochs']}",
 				"--data", f"{data_description_file}",
-				"--weights", f"{train_args['weights']}"])
+				"--weights", f"{train_args['weights']}",
+				"--workers", "0"])
 
 	# Load saved model and metrics 
 	training_res_path = os.path.join(YOLOV5_PATH, "runs/training/exp/")
