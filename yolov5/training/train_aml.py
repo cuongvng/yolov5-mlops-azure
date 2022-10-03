@@ -140,13 +140,14 @@ def main():
 				"--data", f"{data_description_file}",
 				"--weights", f"{train_args['weights']}",
 				"--workers", "0"])
-
+	
+	print("Save model and metrics")
 	# Load saved model and metrics 
-	training_res_path = os.path.join(YOLOV5_PATH, "runs/training/exp/")
+	training_res_path = os.path.join(YOLOV5_PATH, "runs/train/exp/")
 	model_path = os.path.join(training_res_path, "weights/best.pt")
 	metric_path = os.path.join(training_res_path, "results.csv")
 
-	# Copy the model to a new dir `step_output_path`, and delete the `runs/training/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
+	# Copy the model to a new dir `step_output_path`, and delete the `runs/train/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
 
 	os.makedirs(step_output_path, exist_ok=True)
 	model_output_path = os.path.join(step_output_path, model_name)
