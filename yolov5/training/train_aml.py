@@ -34,6 +34,7 @@ import json
 import subprocess
 print("print working dir:")
 subprocess.run(["pwd"])
+subprocess.run(["ls"])
 
 YOLOV5_PATH = "./yolov5_repo"
 
@@ -120,7 +121,7 @@ def main():
 
 	data_description_file = os.path.join(YOLOV5_PATH, 'data/coco128.yaml')
 	with open(data_description_file, 'r') as f:
-		cfg = yaml.load(f)
+		cfg = yaml.safe_load(f)
 		dest = cfg["path"]
 	dataset.download(target_path=dest)
 
