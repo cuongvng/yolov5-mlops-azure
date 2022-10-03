@@ -36,11 +36,12 @@ print("print working dir:")
 subprocess.run(["pwd"])
 subprocess.run(["ls"])
 
+YOLOV5_PATH = "./yolov5_repo"
+
 # Install cv2 deps (missing in the Docker container)
 subprocess.run(["apt-get", "update"])
 subprocess.run(["apt-get", "install", "ffmpeg", "libsm6", "libxext6",  "-y"])
-
-YOLOV5_PATH = "./yolov5_repo"
+subprocess.run(["pip", "install", "-r", YOLOV5_PATH + "/requirements.txt"])
 
 def main():
 	print("Running train_aml.py")
