@@ -137,9 +137,9 @@ def main():
 				"--weights", f"{train_args['weights']}"])
 
 	# Load saved model and metrics 
-	training_res_path = os.join(YOLOV5_PATH, "runs/training/exp/")
-	model_path = os.join(training_res_path, "weights/best.pt")
-	metric_path = os.join(training_res_path, "results.csv")
+	training_res_path = os.path.join(YOLOV5_PATH, "runs/training/exp/")
+	model_path = os.path.join(training_res_path, "weights/best.pt")
+	metric_path = os.path.join(training_res_path, "results.csv")
 
 	# Copy the model to a new dir `step_output_path`, and delete the `runs/training/exp/` dir, so retraining won't generate a new dir (`exp2`, `exp3`, etc.)
 
