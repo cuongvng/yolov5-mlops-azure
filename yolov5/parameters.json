@@ -12,7 +12,7 @@
     },
     "registration":
     {
-        "tags": ["mse"]
+        "tags": ["mAP_0.5:0.95"]
     },
     "scoring":
     {
