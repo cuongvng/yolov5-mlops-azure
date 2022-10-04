@@ -34,9 +34,11 @@ from azureml.core.model import Model as AMLModel
 
 # Install cv2 deps (missing in the Docker container)
 
+YOLOV5_PATH = "./yolov5_repo"
 import subprocess
 subprocess.run(["apt-get", "update"])
 subprocess.run(["apt-get", "install", "ffmpeg", "libsm6", "libxext6",  "-y"])
+subprocess.run(["pip", "install", "-r", YOLOV5_PATH + "/requirements.txt"])
 
 def main():
 
