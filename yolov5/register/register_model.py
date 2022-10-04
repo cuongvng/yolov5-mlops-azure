@@ -108,6 +108,14 @@ def main():
     # load the model
     print("Loading model from " + model_path)
     model_file = os.path.join(model_path, model_name)
+
+    print("Inside model path: ")
+    import subprocess
+    subprocess.run(["ls"])
+
+    sys.path.insert(0, "./yolov5_repo/")
+
+    print("Model file:", model_file)
     model = torch.load(model_file)
     # loaded = torch.load(model_file)
     # model = DetectionModel(loaded["model"].yaml)
