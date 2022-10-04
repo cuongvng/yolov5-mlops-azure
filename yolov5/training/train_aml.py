@@ -131,7 +131,7 @@ def main():
 	dataset.download(target_path=dest)
 
 	# Call training command from the original yolov5 repo, e.g.
-	# $ python ./yolov5_repo/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --workers 0 --project "./runs/train"
+	# $ python ./yolov5_repo/train.py --img 320 --batch 8 --epochs 3 --data coco128.yaml --weights yolov5s.pt --workers 0 --project "./runs/train"
 
 	training_res_path = os.path.join(YOLOV5_PATH, "runs/train")
 	subprocess.run(["python", os.path.join(YOLOV5_PATH, "train.py"), 
