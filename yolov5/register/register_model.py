@@ -32,6 +32,12 @@ import torch
 from azureml.core import Run, Experiment, Workspace, Dataset
 from azureml.core.model import Model as AMLModel
 
+# Install cv2 deps (missing in the Docker container)
+
+import subprocess
+subprocess.run(["apt-get", "update"])
+subprocess.run(["apt-get", "install", "ffmpeg", "libsm6", "libxext6",  "-y"])
+
 def main():
 
     run = Run.get_context()
@@ -108,13 +114,7 @@ def main():
     # load the model
     print("Loading model from " + model_path)
     model_file = os.path.join(model_path, model_name)
-
-    print("Inside model path: ")
-    import subprocess
-    subprocess.run(["ls"])
-
     sys.path.insert(0, "./yolov5_repo/")
-
     print("Model file:", model_file)
     model = torch.load(model_file)
     # loaded = torch.load(model_file)
