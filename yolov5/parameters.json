@@ -1,8 +1,8 @@
 {
     "training":
     {
-        "batch_size": 16,
-        "img_size": 640,
+        "batch_size": 8,
+        "img_size": 320,
         "n_epochs": 1,
         "weights": "yolov5s.pt"
     },
