@@ -1,9 +1,8 @@
 from azureml.pipeline.core.graph import PipelineParameter
 from azureml.pipeline.steps import PythonScriptStep
 from azureml.pipeline.core import Pipeline, PipelineData
-from azureml.core import Workspace, Dataset, Datastore
+from azureml.core import Workspace
 from azureml.core.runconfig import RunConfiguration
-from ml_service.pipelines.load_sample_data import create_sample_data_csv
 from ml_service.util.attach_compute import get_compute
 from ml_service.util.env_variables import Env
 from ml_service.util.manage_environment import get_environment
@@ -91,21 +90,21 @@ def main():
     )
     print("Step Train created")
 
-    # evaluate_step = PythonScriptStep(
-    #     name="Evaluate Model ",
-    #     script_name=e.evaluate_script_path,
-    #     compute_target=aml_compute,
-    #     source_directory=e.sources_directory_train,
-    #     arguments=[
-    #         "--model_name",
-    #         model_name_param,
-    #         "--allow_run_cancel",
-    #         e.allow_run_cancel,
-    #     ],
-    #     runconfig=run_config,
-    #     allow_reuse=False,
-    # )
-    # print("Step Evaluate created")
+    evaluate_step = PythonScriptStep(
+        name="Evaluate Model ",
+        script_name=e.evaluate_script_path,
+        compute_target=aml_compute,
+        source_directory=e.sources_directory_train,
+        arguments=[
+            "--model_name",
+            model_name_param,
+            "--allow_run_cancel",
+            e.allow_run_cancel,
+        ],
+        runconfig=run_config,
+        allow_reuse=False,
+    )
+    print("Step Evaluate created")
 
     register_step = PythonScriptStep(
         name="Register Model ",
@@ -119,17 +118,16 @@ def main():
     )
     print("Step Register created")
 
-    # # Check run_evaluation flag to include or exclude evaluation step.
-    # if (e.run_evaluation).lower() == "true":
-    #     print("Include evaluation step before register step.")
-    #     evaluate_step.run_after(train_step)
-    #     register_step.run_after(evaluate_step)
-    #     steps = [train_step, evaluate_step, register_step]
-    # else:
-
-    print("Exclude evaluation step and directly run register step.")
-    register_step.run_after(train_step)
-    steps = [train_step, register_step]
+    # Check run_evaluation flag to include or exclude evaluation step.
+    if (e.run_evaluation).lower() == "true":
+        print("Include evaluation step before register step.")
+        evaluate_step.run_after(train_step)
+        register_step.run_after(evaluate_step)
+        steps = [train_step, evaluate_step, register_step]
+    else:
+        print("Exclude evaluation step and directly run register step.")
+        register_step.run_after(train_step)
+        steps = [train_step, register_step]
 
     train_pipeline = Pipeline(workspace=aml_workspace, steps=steps)
     train_pipeline._set_experiment_name
