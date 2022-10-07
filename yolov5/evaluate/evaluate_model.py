@@ -27,6 +27,7 @@ from azureml.core import Run
 import argparse
 import traceback
 from util.model_helper import get_model
+import json
 
 run = Run.get_context()
 
@@ -83,7 +84,7 @@ parser.add_argument(
     "--model_name",
     type=str,
     help="Name of the Model",
-    default="yolov5_model.pkl",
+    default="yolov5_model.pt",
 )
 
 parser.add_argument(
@@ -99,7 +100,15 @@ if (args.run_id is not None):
 if (run_id == 'amlcompute'):
     run_id = run.parent.id
 model_name = args.model_name
-metric_eval = "mse"
+
+with open("parameters.json") as f:
+    pars = json.load(f)
+try:
+    eval_args = pars["evaluation"]
+except KeyError:
+    print("Could not load training values from file")
+
+metric_eval = eval_args["metric"] # "mAP_0.5:0.95"
 
 allow_run_cancel = args.allow_run_cancel
 # Parameterize the matrices on which the models should be compared
@@ -115,14 +124,14 @@ try:
                 aml_workspace=ws)
 
     if (model is not None):
-        production_model_mse = 10000
+        production_model_mAP = 10000
         if (metric_eval in model.tags):
-            production_model_mse = float(model.tags[metric_eval])
+            production_model_mAP = float(model.tags[metric_eval])
         try:
             new_model_mse = float(run.parent.get_metrics().get(metric_eval))
         except TypeError:
             new_model_mse = None
-        if (production_model_mse is None or new_model_mse is None):
+        if (production_model_mAP is None or new_model_mse is None):
             print("Unable to find ", metric_eval, " metrics, "
                   "exiting evaluation")
             if((allow_run_cancel).lower() == 'true'):
@@ -130,13 +139,13 @@ try:
         else:
             print(
                 "Current Production model {}: {}, ".format(
-                    metric_eval, production_model_mse) +
+                    metric_eval, production_model_mAP) +
                 "New trained model {}: {}".format(
                     metric_eval, new_model_mse
                 )
             )
 
-        if (new_model_mse < production_model_mse):
+        if (new_model_mse < production_model_mAP):
             print("New trained model performs better, "
                   "thus it should be registered")
         else:
