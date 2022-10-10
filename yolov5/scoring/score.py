@@ -23,9 +23,13 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THE SOFTWARE CODE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+from operator import mod
 import os
-import torch
+import json
 from azureml.core.model import Model
+import sys
+sys.path.apped("../yolov5_repo")
+from detect import main as yolo_main
 import subprocess
 
 # from inference_schema.schema_decorators \
@@ -36,35 +40,42 @@ import subprocess
 # Inference_schema generates a schema for your web service
 # It then creates an OpenAPI (Swagger) specification for the web service
 # at http://<scoring_base_url>/swagger.json
-# @input_schema('data', NumpyParameterType(input_sample))
-# @output_schema(NumpyParameterType(output_sample))
 
 YOLOV5_PATH = "./yolov5_repo"
 file_name = "zidane.jpg"
 subprocess.run(["pip", "install", "-r", YOLOV5_PATH + "/requirements.txt"])
+test_img = os.path.join("./scoring", file_name)
 
-def run(img_path, request_headers):
-
+def run(input, request_headers):
+    img_link = input["image_link"]
     model_path = Model.get_model_path(
         os.getenv("AZUREML_MODEL_DIR").split('/')[-2])
     print("model_path", model_path)
 
     prj_path = os.path.join(YOLOV5_PATH, "runs/detect")
     
-    subprocess.run(["python", 
-                    os.path.join(YOLOV5_PATH, "detect.py"),
-                    "--weights", model_path,
-                    "--source", img_path,
-                    "--project", prj_path,
-                    "--img", 320
-                    ])
+    # subprocess.run(["python", 
+    #                 os.path.join(YOLOV5_PATH, "detect.py"),
+    #                 "--weights", model_path,
+    #                 "--source", img_link,
+    #                 "--project", prj_path,
+    #                 "--img", 320
+    #                 ])
 
-    # Result is saved to `res_path/exp/file_name`
+    opt = {
+        "weights": model_path,
+        "source": img_link,
+        "project": prj_path,
+        "img": 320
+    }
+    summary = yolo_main(opt)
+
+    # Bounded image is saved to `res_path/exp/file_name`
     output_file = os.path.join(prj_path, "exp", file_name)
     print("output_file", output_file)
     subprocess.run(["cp", output_file, os.path.join("outputs", file_name)])
 
-    # Delete the output dir to avoid increment in later runs
+    # Delete the output dir to avoid increment paths in later runs
     subprocess.run(["rm", "-rf", os.path.join(prj_path, "exp")])
 
 
@@ -75,19 +86,18 @@ def run(img_path, request_headers):
     # # The HTTP 'traceparent' header may be set by the caller to implement
     # # distributed tracing (per the W3C Trace Context proposed specification)
     # # and can be used to correlate the request to external systems.
-    # print(('{{"RequestId":"{0}", '
-    #        '"TraceParent":"{1}", '
-    #        '"NumberOfPredictions":{2}}}'
-    #        ).format(
-    #            request_headers.get("X-Ms-Request-Id", ""),
-    #            request_headers.get("Traceparent", ""),
-    #            len(result)
-    # ))
+    print(('{{"RequestId":"{0}", '
+           '"TraceParent":"{1}", '
+           '"NumberOfPredictions":{2}}}'
+           ).format(
+               request_headers.get("X-Ms-Request-Id", ""),
+               request_headers.get("Traceparent", ""),
+               summary
+    ))
 
-    # return {"result": result.tolist()}
+    return {"result": summary}
 
 
 if __name__ == "__main__":
-    test_img = os.path.join("./scoring", file_name)
-    subprocess.run(["wget", "https://raw.githubusercontent.com/cuongvng/yolov5/master/data/images/zidane.jpg", test_img])
-    run(test_img, {})
+    input = "{'img_link': 'https://raw.githubusercontent.com/cuongvng/yolov5/master/data/images/zidane.jpg'}"
+    run(json.loads(input), {})

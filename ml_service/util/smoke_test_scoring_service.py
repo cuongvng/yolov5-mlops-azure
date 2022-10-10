@@ -7,10 +7,7 @@ from ml_service.util.env_variables import Env
 import secrets
 
 
-input = {"data": [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                  [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]]}
-output_len = 2
-
+input = {"image_link": "https://raw.githubusercontent.com/cuongvng/yolov5/master/data/images/zidane.jpg"}
 
 def call_web_service(e, service_type, service_name):
     aml_workspace = Workspace.get(
@@ -82,8 +79,7 @@ def main():
         output = call_web_service(e, args.type, args.service)
     print("Verifying service output")
 
-    assert "result" in output
-    assert len(output["result"]) == output_len
+    assert "person" in output and "tie" in output
     print("Smoke test successful.")
 
 
