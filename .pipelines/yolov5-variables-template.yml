@@ -29,7 +29,7 @@ variables:
   - name: DATASET_VERSION
     value: latest
   - name: TRAINING_PIPELINE_NAME
-    value: "yolov5-Training-Pipeline"
+    value: "yolov5-Train-Eval-Reg-pipeline"
   - name: MODEL_NAME
     value: yolov5_model.pt
 

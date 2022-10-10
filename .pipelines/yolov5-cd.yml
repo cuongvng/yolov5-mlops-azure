@@ -16,8 +16,8 @@ resources:
   - container: mlops
     image: mcr.microsoft.com/mlops/python:latest
   pipelines:
-  - pipeline: model-train-ci
-    source: yolov5-Training-Pipeline # Name of the triggering pipeline
+  - pipeline: yolov5-Train-Eval-Reg-pipeline
+    source: yolov5-Train-Eval-Reg-pipeline # Name of the triggering pipeline
     trigger:
       branches:
         include:
@@ -40,8 +40,8 @@ stages:
     - download: none
     - template: yolov5-get-model-id-artifact-template.yml
       parameters:
-        projectId: '$(resources.pipeline.model-train-ci.projectID)'
-        pipelineId: '$(resources.pipeline.model-train-ci.pipelineID)'
+        projectId: '$(resources.pipeline.yolov5-Train-Eval-Reg-pipeline.projectID)'
+        pipelineId: '$(resources.pipeline.yolov5-Train-Eval-Reg-pipeline.pipelineID)'
         artifactBuildId: ${{ parameters.artifactBuildId }}
     - task: AzureCLI@1
       displayName: 'Install AzureML CLI'
@@ -86,8 +86,8 @@ stages:
     steps:
     - template: yolov5-get-model-id-artifact-template.yml
       parameters:
-        projectId: '$(resources.pipeline.model-train-ci.projectID)'
-        pipelineId: '$(resources.pipeline.model-train-ci.pipelineID)'
+        projectId: '$(resources.pipeline.yolov5-Train-Eval-Reg-pipeline.projectID)'
+        pipelineId: '$(resources.pipeline.yolov5-Train-Eval-Reg-pipeline.pipelineID)'
         artifactBuildId: ${{ parameters.artifactBuildId }}
     - task: AzureCLI@1
       displayName: 'Install AzureML CLI'
@@ -132,8 +132,8 @@ stages:
     steps:
     - template: yolov5-get-model-id-artifact-template.yml
       parameters:
-        projectId: '$(resources.pipeline.model-train-ci.projectID)'
-        pipelineId: '$(resources.pipeline.model-train-ci.pipelineID)'
+        projectId: '$(resources.pipeline.yolov5-Train-Eval-Reg-pipeline.projectID)'
+        pipelineId: '$(resources.pipeline.yolov5-Train-Eval-Reg-pipeline.pipelineID)'
         artifactBuildId: ${{ parameters.artifactBuildId }}
     - template: yolov5-package-model-template.yml
       parameters:
