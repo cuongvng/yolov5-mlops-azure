@@ -111,6 +111,7 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    summary = ""
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -201,6 +202,7 @@ def run(
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
+        summary += '\n' + f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms"
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
     # Print results
@@ -212,6 +214,7 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
+    return summary
 
 def parse_opt():
     parser = argparse.ArgumentParser()
