@@ -27,3 +27,7 @@ dependencies:
       - flake8==3.7.*
       - flake8_formatter_junit_xml==0.0.*
       - azure-cli==2.3.*
+      - tensorboard>=2.4.1
+      - pandas>=1.1.4
+      - seaborn>=0.11.0
+
