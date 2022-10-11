@@ -101,14 +101,14 @@ stages:
       inputs:
         azureSubscription: '$(WORKSPACE_SVC_CONNECTION)'
         scriptLocation: inlineScript
-        workingDirectory: $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)/scoring
+        workingDirectory: $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)
         inlineScript: |
           set -e # fail on error
           
           az ml model deploy --name $(AKS_DEPLOYMENT_NAME) --model '$(MODEL_NAME):$(get_model.MODEL_VERSION)' \
           --compute-target $(AKS_COMPUTE_NAME) \
-          --ic inference_config.yml \
-          --dc deployment_config_aks.yml \
+          --ic ./scoring/inference_config.yml \
+          --dc ./scoring/adeployment_config_aks.yml \
           -g $(RESOURCE_GROUP) --workspace-name $(WORKSPACE_NAME) \
           --overwrite -v
     - task: AzureCLI@1
