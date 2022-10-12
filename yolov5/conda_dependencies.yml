@@ -23,11 +23,11 @@ dependencies:
 
   - pip:
       # Base AzureML SDK
-      - azureml-sdk==1.27.*
+      - azureml-sdk==1.46.*
 
       # Must match AzureML SDK version.
       # https://docs.microsoft.com/en-us/azure/machine-learning/concept-environments
-      - azureml-defaults==1.27.*
+      - azureml-defaults==1.46.*
 
       # Training deps
       - matplotlib>=3.2.2
@@ -43,5 +43,6 @@ dependencies:
       - tensorboard>=2.4.1
       - pandas>=1.1.4
       - seaborn>=0.11.0
+      - gunicorn>=20.1.0
 
       # Scoring deps
