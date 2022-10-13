@@ -26,11 +26,31 @@ POSSIBILITY OF SUCH DAMAGE.
 from operator import mod
 import os
 import json
+from pyexpat import model
 from azureml.core.model import Model
-import sys
-sys.path.apped("../yolov5_repo")
-from detect import main as yolo_main
+from azureml.core import Workspace
+import torch
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
+
 import subprocess
+# Install cv2 deps (missing in the Docker container)
+subprocess.run(["apt-get", "update"])
+subprocess.run(["apt-get", "install", "ffmpeg", "libsm6", "libxext6",  "-y"])
+
+import sys
+FILE = Path(__file__).resolve()
+YOLOV5_PATH = os.path.join(str(FILE.parents[1]), "yolov5_repo")  # YOLOv5 root directory
+if str(YOLOV5_PATH) not in sys.path:
+    sys.path.append(str(YOLOV5_PATH))  # add YOLOV5_PATH to PATH for importing modules
+
+from models.common import DetectMultiBackend
+from utils.torch_utils import select_device
+from utils.general import LOGGER, Profile, check_file, check_img_size, check_imshow,   check_requirements, colorstr, cv2, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh
+from utils.plots import Annotator, colors, save_one_box
+from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
+
 
 # from inference_schema.schema_decorators \
 #     import input_schema, output_schema
@@ -41,43 +61,113 @@ import subprocess
 # It then creates an OpenAPI (Swagger) specification for the web service
 # at http://<scoring_base_url>/swagger.json
 
-YOLOV5_PATH = "./yolov5_repo"
 file_name = "zidane.jpg"
 subprocess.run(["pip", "install", "-r", YOLOV5_PATH + "/requirements.txt"])
 test_img = os.path.join("./scoring", file_name)
 
+def init():
+    global model
+
+    device = select_device("")
+    model_name = os.environ.get("MODEL_NAME")
+    workspace_name = os.environ.get("WORKSPACE_NAME")
+    resource_group = os.environ.get("RESOURCE_GROUP")
+    subscription_id = os.environ.get("SUBSCRIPTION_ID")
+
+    aml_workspace = Workspace.get(
+        name=workspace_name,
+        subscription_id=subscription_id,
+        resource_group=resource_group
+    )
+    ws = aml_workspace
+
+    model_path = Model.get_model_path(
+        model_name=model_name, 
+        version=None, 
+        _workspace=ws
+    )
+    
+    print("model_path", model_path)
+    model = DetectMultiBackend(
+        weights=model_path, 
+        device=device, 
+        data="./yolov5_repo/data/coco128.yaml"
+        )
+
 def run(input, request_headers):
     img_link = input["image_link"]
-    model_path = Model.get_model_path(
-        os.getenv("AZUREML_MODEL_DIR").split('/')[-2])
-    print("model_path", model_path)
-
     prj_path = os.path.join(YOLOV5_PATH, "runs/detect")
+
+    # Run inference
+    seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    summary = ""
+
+    stride, names, pt = model.stride, model.names, model.pt
+    imgsz = check_img_size(320, s=stride)  # check image size
+    bs = 1 # batch_size
+    model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))
+    save_dir = os.mkdir("./outputs")
+
+    # Download image from link and create dataset from it
+    ext = img_link.split('.')[-1]
+    source = "./img." + ext
+    subprocess.run(["wget", img_link, source])
+    dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
     
-    # subprocess.run(["python", 
-    #                 os.path.join(YOLOV5_PATH, "detect.py"),
-    #                 "--weights", model_path,
-    #                 "--source", img_link,
-    #                 "--project", prj_path,
-    #                 "--img", 320
-    #                 ])
+    conf_thres=0.25  # confidence threshold
+    iou_thres=0.45  # NMS IOU threshold
+    max_det=1000  # maximum detections per image
 
-    opt = {
-        "weights": model_path,
-        "source": img_link,
-        "project": prj_path,
-        "img": 320
-    }
-    summary = yolo_main(opt)
+    for path, im, im0s, vid_cap, s in dataset:
+        with dt[0]:
+            im = torch.from_numpy(im).to(model.device)
+            im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
+            im /= 255  # 0 - 255 to 0.0 - 1.0
+            if len(im.shape) == 3:
+                im = im[None]  # expand for batch dim
 
-    # Bounded image is saved to `res_path/exp/file_name`
-    output_file = os.path.join(prj_path, "exp", file_name)
-    print("output_file", output_file)
-    subprocess.run(["cp", output_file, os.path.join("outputs", file_name)])
+        # Inference
+        with dt[1]:
+            pred = model(im, augment=False, visualize=False)
 
-    # Delete the output dir to avoid increment paths in later runs
-    subprocess.run(["rm", "-rf", os.path.join(prj_path, "exp")])
+        # NMS
+        with dt[2]:
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes=None, agnostic_nms=False, max_det=max_det)
 
+        # Second-stage classifier (optional)
+        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
+
+        # Process predictions
+        for i, det in enumerate(pred):  # per image
+            seen += 1
+            p, im0 = path, im0s.copy()
+
+            p = Path(p)  # to Path
+            save_path = str(save_dir / p.name)  # im.jpg
+            s += '%gx%g ' % im.shape[2:]  # print string
+            annotator = Annotator(im0, line_width=3, example=str(names))
+            if len(det):
+                # Rescale boxes from img_size to im0 size
+                det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+
+                # Print results
+                for c in det[:, 5].unique():
+                    n = (det[:, 5] == c).sum()  # detections per class
+                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+
+                # Write results
+                for *xyxy, conf, cls in reversed(det):
+                    # Add bbox to image
+                    c = int(cls)  # integer class
+                    label = f'{names[c]} {conf:.2f}'
+                    annotator.box_label(xyxy, label, color=colors(c, True))
+
+            # Save results (image with detections)
+            cv2.imwrite(save_path, im0)
+
+        # Print time (inference-only)
+        summary += f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms\n" 
+        LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms\n")
 
     # # Demonstrate how we can log custom data into the Application Insights
     # # traces collection.
@@ -99,5 +189,5 @@ def run(input, request_headers):
 
 
 if __name__ == "__main__":
-    input = "{'img_link': 'https://raw.githubusercontent.com/cuongvng/yolov5/master/data/images/zidane.jpg'}"
+    input = "{'image_link': 'https://raw.githubusercontent.com/cuongvng/yolov5/master/data/images/zidane.jpg'}"
     run(json.loads(input), {})
