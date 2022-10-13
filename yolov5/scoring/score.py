@@ -61,9 +61,7 @@ from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
 # It then creates an OpenAPI (Swagger) specification for the web service
 # at http://<scoring_base_url>/swagger.json
 
-file_name = "zidane.jpg"
 subprocess.run(["pip", "install", "-r", YOLOV5_PATH + "/requirements.txt"])
-test_img = os.path.join("./scoring", file_name)
 
 def init():
     global model
@@ -95,23 +93,28 @@ def init():
         )
 
 def run(input, request_headers):
-    img_link = input["image_link"]
-    prj_path = os.path.join(YOLOV5_PATH, "runs/detect")
+    img_link = json.loads(input)["image_link"]
+    print("img_link", img_link)
 
     # Run inference
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
     summary = ""
 
     stride, names, pt = model.stride, model.names, model.pt
-    imgsz = check_img_size(320, s=stride)  # check image size
+    imgsz = check_img_size([320, 320], s=stride)  # check image size
     bs = 1 # batch_size
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))
-    save_dir = os.mkdir("./outputs")
+
+    if not os.path.exists("./outputs"):
+        save_dir = os.mkdir("./outputs")
+    else:
+        save_dir = "./outputs"
 
     # Download image from link and create dataset from it
-    ext = img_link.split('.')[-1]
-    source = "./img." + ext
-    subprocess.run(["wget", img_link, source])
+    file_name = img_link.split('/')[-1]
+    source = os.path.join(YOLOV5_PATH, file_name)
+    print(("Source", source))
+    subprocess.run(["curl", img_link, "--output", source])
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
     
     conf_thres=0.25  # confidence threshold
@@ -132,7 +135,7 @@ def run(input, request_headers):
 
         # NMS
         with dt[2]:
-            pred = non_max_suppression(pred, conf_thres, iou_thres, classes=None, agnostic_nms=False, max_det=max_det)
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes=None, agnostic=False, max_det=max_det)
 
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
@@ -143,7 +146,7 @@ def run(input, request_headers):
             p, im0 = path, im0s.copy()
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
+            save_path = str(os.path.join(save_dir, file_name)) 
             s += '%gx%g ' % im.shape[2:]  # print string
             annotator = Annotator(im0, line_width=3, example=str(names))
             if len(det):
@@ -169,6 +172,7 @@ def run(input, request_headers):
         summary += f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms\n" 
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms\n")
 
+    subprocess.run(["rm", source])
     # # Demonstrate how we can log custom data into the Application Insights
     # # traces collection.
     # # The 'X-Ms-Request-id' value is generated internally and can be used to
