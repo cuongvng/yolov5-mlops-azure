@@ -1,0 +1,12 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: yolov5-test
+endpoint_name: yolov5-endpoint
+model: azureml:yolov5_model.pt:1
+code_configuration:
+  code: ./
+  scoring_script: ./scoring/score.py
+environment:
+  conda_file: ./conda_dependencies.yml
+  image: mcr.microsoft.com/azureml/openmpi3.1.2-ubuntu18.04:20210727.v1
+instance_type: Standard_DS2_v2
+instance_count: 1
