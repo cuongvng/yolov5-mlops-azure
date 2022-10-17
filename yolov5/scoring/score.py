@@ -29,10 +29,13 @@ import json
 from pyexpat import model
 from azureml.core.model import Model
 from azureml.core import Workspace
+from azureml.core.authentication import ServicePrincipalAuthentication
+from azure.ai.ml import MLClient
 import torch
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
+# from azure.identity import DefaultAzureCredential
 
 import subprocess
 # Install cv2 deps (missing in the Docker container)
@@ -41,15 +44,16 @@ subprocess.run(["apt-get", "install", "ffmpeg", "libsm6", "libxext6",  "-y"])
 
 import sys
 FILE = Path(__file__).resolve()
-YOLOV5_PATH = os.path.join(str(FILE.parents[1]), "yolov5_repo")  # YOLOv5 root directory
+YOLOV5_PATH = os.path.join(str(FILE.parents[0]), "yolov5_repo")  # YOLOv5 dependency
+print(("YOLOV5_PATH", YOLOV5_PATH))
 if str(YOLOV5_PATH) not in sys.path:
-    sys.path.append(str(YOLOV5_PATH))  # add YOLOV5_PATH to PATH for importing modules
+    sys.path.append(str(YOLOV5_PATH)) 
 
 from models.common import DetectMultiBackend
 from utils.torch_utils import select_device
-from utils.general import LOGGER, Profile, check_file, check_img_size, check_imshow,   check_requirements, colorstr, cv2, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh
-from utils.plots import Annotator, colors, save_one_box
-from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
+from utils.general import LOGGER, Profile, check_img_size, cv2, non_max_suppression, scale_boxes
+from utils.plots import Annotator, colors
+from utils.dataloaders import LoadImages
 
 
 # from inference_schema.schema_decorators \
@@ -61,7 +65,7 @@ from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
 # It then creates an OpenAPI (Swagger) specification for the web service
 # at http://<scoring_base_url>/swagger.json
 
-subprocess.run(["pip", "install", "-r", YOLOV5_PATH + "/requirements.txt"])
+subprocess.run(["pip", "install", "-r", os.path.join(YOLOV5_PATH, "requirements.txt")])
 
 def init():
     global model
@@ -71,13 +75,21 @@ def init():
     workspace_name = os.environ.get("WORKSPACE_NAME")
     resource_group = os.environ.get("RESOURCE_GROUP")
     subscription_id = os.environ.get("SUBSCRIPTION_ID")
+    tenant_id = os.environ.get("AZURE_TENANT_ID")
+    sp_id = os.environ.get("SP_APP_ID")
+    sp_secret = os.environ.get("SP_APP_SECRET")
 
-    aml_workspace = Workspace.get(
-        name=workspace_name,
+    svc_pr = ServicePrincipalAuthentication(
+       tenant_id=tenant_id,
+       service_principal_id=sp_id,
+       service_principal_password=sp_secret)
+
+    ws = Workspace(
+        workspace_name=workspace_name,
         subscription_id=subscription_id,
-        resource_group=resource_group
+        resource_group=resource_group,
+        auth=svc_pr
     )
-    ws = aml_workspace
 
     model_path = Model.get_model_path(
         model_name=model_name, 
@@ -89,7 +101,7 @@ def init():
     model = DetectMultiBackend(
         weights=model_path, 
         device=device, 
-        data="./yolov5_repo/data/coco128.yaml"
+        data=os.path.join(YOLOV5_PATH, "data/coco128.yaml")
         )
 
 def run(input, request_headers):
