@@ -30,7 +30,6 @@ from pyexpat import model
 from azureml.core.model import Model
 from azureml.core import Workspace
 from azureml.core.authentication import ServicePrincipalAuthentication
-from azure.ai.ml import MLClient
 import torch
 from pathlib import Path
 from dotenv import load_dotenv
