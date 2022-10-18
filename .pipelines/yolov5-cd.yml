@@ -63,6 +63,7 @@ stages:
         inlineScript: |
           set -e # fail on error
           sed -i -e 's/$(MODEL_NAME)/$(MODEL_NAME):$(get_model.MODEL_VERSION)/g' $(DEPLOYMENT_FILE)
+          cat $(DEPLOYMENT_FILE)
           # Update az ml deployment
           az ml online-deployment update -f $(DEPLOYMENT_FILE) \
           -e $(ENDPOINT_NAME)  \
