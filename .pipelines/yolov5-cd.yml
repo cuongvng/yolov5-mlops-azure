@@ -14,7 +14,7 @@ trigger: none
 resources:
   containers:
   - container: mlops
-    image: mcr.microsoft.com/mlops/python:latest
+    image: mcr.microsoft.com/azure-dev-cli-apps:latest
   pipelines:
   - pipeline: yolov5-Train-Eval-Reg-pipeline
     source: yolov5-Train-Eval-Reg-pipeline # Name of the triggering pipeline
@@ -48,6 +48,7 @@ stages:
       displayName: 'Install AzureML CLI v2'
       inputs:
         azureSubscription: '$(WORKSPACE_SVC_CONNECTION)'
+        scriptType: 'bash'
         scriptLocation: inlineScript
         workingDirectory: $(Build.SourcesDirectory)
         inlineScript: 'az extension add -n ml'
@@ -56,6 +57,7 @@ stages:
       condition: variables['ENDPOINT_NAME']
       inputs:
         azureSubscription: '$(WORKSPACE_SVC_CONNECTION)'
+        scriptType: 'bash'
         scriptLocation: inlineScript
         workingDirectory: $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)
         inlineScript: |
@@ -73,7 +75,7 @@ stages:
     #     inlineScript: |
     #       set -e # fail on error
     #       export SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-    #       python -m ml_service.util.smoke_test_scoring_service --type ACI --service "$(ACI_DEPLOYMENT_NAME)"
+    #       python3 -m ml_service.util.smoke_test_scoring_service --type ACI --service "$(ACI_DEPLOYMENT_NAME)"
 
 # - stage: 'Deploy_AKS'
 #   displayName: 'Deploy to AKS'
@@ -120,7 +122,7 @@ stages:
 #         inlineScript: |
 #           set -e # fail on error
 #           export SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-#           python -m ml_service.util.smoke_test_scoring_service --type AKS --service "$(AKS_DEPLOYMENT_NAME)"
+#           python3 -m ml_service.util.smoke_test_scoring_service --type AKS --service "$(AKS_DEPLOYMENT_NAME)"
 
 # - stage: 'Deploy_Webapp'
 #   displayName: 'Deploy to Webapp'
@@ -159,4 +161,4 @@ stages:
 #         inlineScript: |
 #           set -e # fail on error
 #           export SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-#           python -m ml_service.util.smoke_test_scoring_service --type Webapp --service "$(WebAppDeploy.AppServiceApplicationUrl)/score"
+#           python3 -m ml_service.util.smoke_test_scoring_service --type Webapp --service "$(WebAppDeploy.AppServiceApplicationUrl)/score"
