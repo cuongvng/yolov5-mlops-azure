@@ -1,9 +1,0 @@
-entryScript: ./scoring/score.py
-runtime: python
-condaFile: ./conda_dependencies.yml
-extraDockerfileSteps:
-schemaFile:
-sourceDirectory: ./
-enableGpu: False
-baseImage: mcr.microsoft.com/azureml/openmpi3.1.2-ubuntu18.04:20210727.v1
-baseImageRegistry:
