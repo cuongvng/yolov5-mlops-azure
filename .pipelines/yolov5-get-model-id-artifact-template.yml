@@ -35,11 +35,11 @@ steps:
       script: |
         # Print JSON
         cat $(Build.SourcesDirectory)/bin/model/model.json
-        cat $(Build.SourcesDirectory)/bin/model/model.json | jq '.'
 
         # Set model name and version variables
-        MODEL_NAME=$(jq -r '.name' <$(Build.SourcesDirectory)/bin/model/model.json)
-        MODEL_VERSION=$(jq -r '.version' <$(Build.SourcesDirectory)/bin/model/model.json)
+        
+        MODEL_NAME=$(sed -E 's/.*"name": "?([^,"]*)"?.*/\1/' $(Build.SourcesDirectory)/bin/model/model.json)
+        MODEL_VERSION=$(sed -E 's/.*"version":"?([^,"]*)"?./\1/' $(Build.SourcesDirectory)/bin/model/model.json)
 
         echo "Model Name: $MODEL_NAME"
         echo "Model Version: $MODEL_VERSION"
