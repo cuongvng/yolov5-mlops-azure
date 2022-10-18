@@ -51,10 +51,12 @@ stages:
         secureFile: '.env'
     - task: CopyFiles@2
       inputs:
+        sourceFolder: $(Agent.TempDirectory)
         contents: $(DotEnv.secureFilePath)
         targetFolder: $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)/scoring
     - script: |
         echo .env path $(DotEnv.secureFilePath)
+        echo temp dir $(Agent.TempDirectory)
         ls $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)/scoring/.env
 
     - task: AzureCLI@2
