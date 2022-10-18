@@ -5,7 +5,7 @@ parameters:
 - name : artifactBuildId
   displayName: Model Train CI Build ID. Default is 'latest'.
   type: string
-  default: latest
+  default: 33
 
 pr: none
 
