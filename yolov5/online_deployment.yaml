@@ -1,7 +1,7 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
 name: yolov5
-endpoint_name: yolov5-endpoint
-model: azureml:yolov5_model.pt:1
+endpoint_name: yolov5-mlops
+model: azureml:yolov5_model.pt
 code_configuration:
   code: ./scoring
   scoring_script: score.py
