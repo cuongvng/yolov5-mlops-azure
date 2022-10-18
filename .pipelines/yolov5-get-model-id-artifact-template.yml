@@ -34,6 +34,7 @@ steps:
       targetType: 'inline'
       script: |
         # Print JSON
+        apt-get install -y jq
         cat $(Build.SourcesDirectory)/bin/model/model.json | jq '.'
 
         # Set model name and version variables
