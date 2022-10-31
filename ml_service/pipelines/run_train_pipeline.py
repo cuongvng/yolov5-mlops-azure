@@ -2,6 +2,7 @@ from azureml.pipeline.core import PublishedPipeline
 from azureml.core import Experiment, Workspace
 import argparse
 from ml_service.util.env_variables import Env
+from azureml.core.authentication import ServicePrincipalAuthentication
 
 
 def main():
@@ -23,11 +24,29 @@ def main():
 
     e = Env()
 
-    aml_workspace = Workspace.get(
-        name=e.workspace_name,
-        subscription_id=e.subscription_id,
-        resource_group=e.resource_group
+    tenant_id = e.tenant_id
+    sp_id = e.app_id
+    sp_secret = e.app_secret
+    workspace_name = e.workspace_name
+    subscription_id = e.subscription_id
+    resource_group = e.resource_group
+
+    svc_pr = ServicePrincipalAuthentication(
+       tenant_id=tenant_id,
+       service_principal_id=sp_id,
+       service_principal_password=sp_secret)
+
+    aml_workspace = Workspace(
+        workspace_name=workspace_name,
+        subscription_id=subscription_id,
+        resource_group=resource_group,
+        auth=svc_pr
     )
+    # aml_workspace = Workspace.get(
+    #     name=e.workspace_name,
+    #     subscription_id=e.subscription_id,
+    #     resource_group=e.resource_group
+    # )
 
     # Find the pipeline that was published by the specified build ID
     pipelines = PublishedPipeline.list(aml_workspace)
