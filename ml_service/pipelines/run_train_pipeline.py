@@ -2,10 +2,6 @@ from azureml.pipeline.core import PublishedPipeline
 from azureml.core import Experiment, Workspace
 import argparse
 from ml_service.util.env_variables import Env
-from azureml.core.authentication import ServicePrincipalAuthentication
-import os
-from dotenv import load_dotenv
-load_dotenv("./yolov5/.env")
 
 
 def main():
@@ -27,29 +23,11 @@ def main():
 
     e = Env()
 
-    workspace_name = os.environ.get("WORKSPACE_NAME")
-    resource_group = os.environ.get("RESOURCE_GROUP")
-    subscription_id = os.environ.get("SUBSCRIPTION_ID")
-    tenant_id = os.environ.get("AZURE_TENANT_ID")
-    sp_id = os.environ.get("SP_APP_ID")
-    sp_secret = os.environ.get("SP_APP_SECRET")
-
-    svc_pr = ServicePrincipalAuthentication(
-       tenant_id=tenant_id,
-       service_principal_id=sp_id,
-       service_principal_password=sp_secret)
-
-    aml_workspace = Workspace(
-        workspace_name=workspace_name,
-        subscription_id=subscription_id,
-        resource_group=resource_group,
-        auth=svc_pr
+    aml_workspace = Workspace.get(
+        name=e.workspace_name,
+        subscription_id=e.subscription_id,
+        resource_group=e.resource_group
     )
-    # aml_workspace = Workspace.get(
-    #     name=e.workspace_name,
-    #     subscription_id=e.subscription_id,
-    #     resource_group=e.resource_group
-    # )
 
     # Find the pipeline that was published by the specified build ID
     pipelines = PublishedPipeline.list(aml_workspace)
