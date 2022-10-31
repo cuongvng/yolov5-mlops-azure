@@ -3,6 +3,9 @@ from azureml.core import Experiment, Workspace
 import argparse
 from ml_service.util.env_variables import Env
 from azureml.core.authentication import ServicePrincipalAuthentication
+import os
+from dotenv import load_dotenv
+load_dotenv("./yolov5/.env")
 
 
 def main():
@@ -24,12 +27,12 @@ def main():
 
     e = Env()
 
-    tenant_id = e.tenant_id
-    sp_id = e.app_id
-    sp_secret = e.app_secret
-    workspace_name = e.workspace_name
-    subscription_id = e.subscription_id
-    resource_group = e.resource_group
+    workspace_name = os.environ.get("WORKSPACE_NAME")
+    resource_group = os.environ.get("RESOURCE_GROUP")
+    subscription_id = os.environ.get("SUBSCRIPTION_ID")
+    tenant_id = os.environ.get("AZURE_TENANT_ID")
+    sp_id = os.environ.get("SP_APP_ID")
+    sp_secret = os.environ.get("SP_APP_SECRET")
 
     svc_pr = ServicePrincipalAuthentication(
        tenant_id=tenant_id,
