@@ -48,9 +48,10 @@ stages:
         echo temp dir $(Agent.TempDirectory)
         ls $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)/.env
 
-    - task: AzureCLI@1
+    - task: AzureCLI@2
       inputs:
         azureSubscription: '$(WORKSPACE_SVC_CONNECTION)'
+        scriptType: 'bash'
         scriptLocation: inlineScript
         workingDirectory: $(Build.SourcesDirectory)
         inlineScript: |
@@ -72,9 +73,10 @@ stages:
     container: mlops
     timeoutInMinutes: 0
     steps:
-    - task: AzureCLI@1
+    - task: AzureCLI@2
       inputs:
         azureSubscription: '$(WORKSPACE_SVC_CONNECTION)'
+        scriptType: 'bash'
         scriptLocation: inlineScript
         workingDirectory: $(Build.SourcesDirectory)
         inlineScript: |
