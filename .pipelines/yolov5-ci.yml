@@ -33,6 +33,21 @@ stages:
     timeoutInMinutes: 0
     steps:
     # - template: code-quality-template.yml
+    - task: DownloadSecureFile@1
+      displayName: 'Download .env'
+      name: DotEnv # The name with which to reference the secure file's path on the agent, like $(DotEnv.secureFilePath)
+      inputs:
+        secureFile: '.env'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: $(Agent.TempDirectory)
+        contents: $(DotEnv.secureFilePath)
+        targetFolder: $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)
+    - script: |
+        echo .env path $(DotEnv.secureFilePath)
+        echo temp dir $(Agent.TempDirectory)
+        ls $(Build.SourcesDirectory)/$(SOURCES_DIR_TRAIN)/.env
+
     - task: AzureCLI@1
       inputs:
         azureSubscription: '$(WORKSPACE_SVC_CONNECTION)'
